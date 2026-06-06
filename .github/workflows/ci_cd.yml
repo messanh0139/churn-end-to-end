@@ -1,0 +1,83 @@
+name: CI-CD Churn Project
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      retrain:
+        description: "Réentraîner le modèle avant le build Docker"
+        type: boolean
+        default: false
+
+jobs:
+  # Tests automatiques
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r 06_MLOps/requirements.txt
+
+      - name: Run tests
+        run: pytest tests/ --tb=short
+        env:
+          PYTHONPATH: 03_SRC
+
+  # Réentraînement
+  train:
+    runs-on: ubuntu-latest
+    needs: test
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.retrain }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install -r 06_MLOps/requirements.txt
+
+      - name: Train model
+        run: python 03_SRC/models/train_model.py
+        env:
+          PYTHONPATH: 03_SRC
+
+      - name: Optimize model (SVC)
+        run: python 03_SRC/models/optimize_model.py
+        env:
+          PYTHONPATH: 03_SRC
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: best_model
+          path: 04_Models/best_model.pkl
+
+  # Build Docker
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download model artifact (si réentraînement)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.retrain }}
+        uses: actions/download-artifact@v4
+        with:
+          name: best_model
+          path: 04_Models/
+
+      - name: Build Docker image
+        run: docker build -f 06_MLOps/Dockerfile -t churn-api:latest .

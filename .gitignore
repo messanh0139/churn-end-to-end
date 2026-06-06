@@ -1,0 +1,31 @@
+# Credentials (ne jamais committer)
+.env
+
+# Environnement virtuel
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Données brutes (trop lourdes pour Git)
+01_Data/raw/
+
+# Logs de monitoring (générés à l'exécution)
+07_Monitoring/predictions_log.csv
+07_Monitoring/actual_labels.csv
+07_Monitoring/drift_reports/
+07_Monitoring/performance_reports/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Docker
+06_MLOps/wheels/
+
+# Airflow
+06_MLOps/airflow/logs/
+06_MLOps/airflow/.env.airflow
+06_MLOps/mlruns/

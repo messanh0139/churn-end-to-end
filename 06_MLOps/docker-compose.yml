@@ -1,0 +1,13 @@
+services:
+  churn-api:
+    build:
+      context: ..
+      dockerfile: 06_MLOps/Dockerfile
+    image: churn-api:latest
+    container_name: churn-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../04_Models:/app/04_Models
+      - ../07_Monitoring:/app/07_Monitoring
+    restart: unless-stopped

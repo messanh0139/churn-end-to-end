@@ -1,0 +1,90 @@
+version: '3.8'
+
+x-airflow-common:
+  &airflow-common
+  build:
+    context: ../..
+    dockerfile: 06_MLOps/airflow/Dockerfile.airflow
+  environment:
+    &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-churn-secret-key}
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    PYTHONPATH: /opt/airflow/project/03_SRC:/opt/airflow/project/07_Monitoring
+    SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    ALERT_EMAIL_SENDER: ${ALERT_EMAIL_SENDER:-}
+    ALERT_EMAIL_PASSWORD: ${ALERT_EMAIL_PASSWORD:-}
+    ALERT_EMAIL_RECEIVER: ${ALERT_EMAIL_RECEIVER:-}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ../../03_SRC:/opt/airflow/project/03_SRC:ro
+    - ../../04_Models:/opt/airflow/project/04_Models
+    - ../../07_Monitoring:/opt/airflow/project/07_Monitoring
+    - ../../01_Data:/opt/airflow/project/01_Data:ro
+    - ../../06_MLOps/mlruns:/opt/airflow/project/06_MLOps/mlruns
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    command: >
+      bash -c "
+        airflow db migrate &&
+        airflow users create
+          --username admin
+          --firstname Admin
+          --lastname User
+          --role Admin
+          --email admin@churn-mlops.local
+          --password admin
+      "
+    restart: on-failure
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-db-volume:

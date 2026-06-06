@@ -1,0 +1,82 @@
+{
+  "best_model": "svc",
+  "models_compared": [
+    "logistic_regression",
+    "random_forest",
+    "svc",
+    "xgboost"
+  ],
+  "target": "Churn",
+  "metrics": {
+    "logistic_regression": {
+      "accuracy": 0.7417,
+      "precision": 0.5087,
+      "recall": 0.7807,
+      "f1_score": 0.616,
+      "roc_auc": 0.8478,
+      "confusion_matrix": [
+        [
+          753,
+          282
+        ],
+        [
+          82,
+          292
+        ]
+      ]
+    },
+    "random_forest": {
+      "accuracy": 0.7821,
+      "precision": 0.6128,
+      "recall": 0.4866,
+      "f1_score": 0.5425,
+      "roc_auc": 0.8241,
+      "confusion_matrix": [
+        [
+          920,
+          115
+        ],
+        [
+          192,
+          182
+        ]
+      ]
+    },
+    "svc": {
+      "accuracy": 0.7509,
+      "precision": 0.5203,
+      "recall": 0.7888,
+      "f1_score": 0.627,
+      "roc_auc": 0.8222,
+      "confusion_matrix": [
+        [
+          763,
+          272
+        ],
+        [
+          79,
+          295
+        ]
+      ]
+    },
+    "xgboost": {
+      "accuracy": 0.8034,
+      "precision": 0.658,
+      "recall": 0.5401,
+      "f1_score": 0.5932,
+      "roc_auc": 0.841,
+      "confusion_matrix": [
+        [
+          930,
+          105
+        ],
+        [
+          172,
+          202
+        ]
+      ]
+    }
+  },
+  "model_path": "/home/jes/Bureau/Customer_Churn_Prediction/04_Models/best_model.pkl",
+  "xgboost_available": true
+}

@@ -1,0 +1,13 @@
+02_Notebooks/
+01_Data/
+08_Optimization_Strategy/
+09_Documentation/
+tests/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.git/
+06_MLOps/airflow/
+06_MLOps/mlruns/
+.venv/
