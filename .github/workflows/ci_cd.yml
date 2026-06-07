@@ -28,7 +28,7 @@ jobs:
         run: pip install -r 06_MLOps/requirements.txt
 
       - name: Run tests
-        run: pytest tests/ --tb=short
+        run: python -m pytest tests/ --tb=short
         env:
           PYTHONPATH: 03_SRC
 
