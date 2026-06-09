@@ -44,7 +44,7 @@ def build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
 
 
 def train():
-    mlflow.set_tracking_uri(str(ROOT / "06_MLOps" / "mlruns"))
+    mlflow.set_tracking_uri(f"sqlite:///{ROOT}/06_MLOps/mlruns.db")
     mlflow.set_experiment(MLFLOW_EXPERIMENT)
 
     df = pd.read_csv(DATA_RAW_PATH)
