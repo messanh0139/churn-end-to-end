@@ -10,8 +10,8 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Données brutes (trop lourdes pour Git)
-01_Data/raw/
+# Données brutes — fichier léger (<1MB), commité pour le CI/CD
+# 01_Data/raw/
 
 # Logs de monitoring (générés à l'exécution)
 07_Monitoring/predictions_log.csv
