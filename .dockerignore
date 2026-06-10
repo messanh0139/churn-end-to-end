@@ -9,5 +9,6 @@ __pycache__/
 *.pyo
 .git/
 06_MLOps/airflow/
+!06_MLOps/airflow/requirements.airflow.txt
 06_MLOps/mlruns/
 .venv/

@@ -1,0 +1,6 @@
+FROM python:3.13-slim
+WORKDIR /app
+RUN pip install --no-cache-dir streamlit==1.41.1 pandas==2.2.3 requests==2.34.2
+COPY 10_Dashboard/app.py ./10_Dashboard/app.py
+EXPOSE 8501
+CMD ["streamlit", "run", "10_Dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8501"]

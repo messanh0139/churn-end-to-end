@@ -1,0 +1,5 @@
+FROM python:3.13-slim
+RUN pip install --no-cache-dir mlflow==3.13.0
+WORKDIR /project
+EXPOSE 5000
+CMD ["mlflow", "ui", "--backend-store-uri", "sqlite:///06_MLOps/mlruns.db", "--host", "0.0.0.0", "--port", "5000", "--disable-security-middleware"]

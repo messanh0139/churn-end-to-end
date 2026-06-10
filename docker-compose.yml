@@ -1,0 +1,129 @@
+version: '3.8'
+
+x-airflow-common:
+  &airflow-common
+  build:
+    context: .
+    dockerfile: 06_MLOps/airflow/Dockerfile.airflow
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-churn-secret-key}
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    MLFLOW_TRACKING_URI: sqlite:////opt/airflow/project/06_MLOps/mlruns.db
+    PYTHONPATH: /opt/airflow/project/03_SRC:/opt/airflow/project/07_Monitoring
+    SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    ALERT_EMAIL_SENDER: ${ALERT_EMAIL_SENDER:-}
+    ALERT_EMAIL_PASSWORD: ${ALERT_EMAIL_PASSWORD:-}
+    ALERT_EMAIL_RECEIVER: ${ALERT_EMAIL_RECEIVER:-}
+  volumes:
+    - ./06_MLOps/airflow/dags:/opt/airflow/dags
+    - ./06_MLOps/airflow/logs:/opt/airflow/logs
+    - ./06_MLOps/airflow/plugins:/opt/airflow/plugins
+    - ./03_SRC:/opt/airflow/project/03_SRC:ro
+    - ./04_Models:/opt/airflow/project/04_Models
+    - ./07_Monitoring:/opt/airflow/project/07_Monitoring
+    - ./01_Data:/opt/airflow/project/01_Data:ro
+    - ./06_MLOps:/opt/airflow/project/06_MLOps
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+
+  # ── API ────────────────────────────────────────────────────────────────────
+  churn-api:
+    build:
+      context: .
+      dockerfile: 06_MLOps/Dockerfile
+    image: churn-api:latest
+    container_name: churn-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./04_Models:/app/04_Models
+      - ./07_Monitoring:/app/07_Monitoring
+    restart: unless-stopped
+
+  # ── Dashboard Streamlit ────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: 10_Dashboard/Dockerfile.dashboard
+    container_name: churn-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./07_Monitoring:/app/07_Monitoring
+      - ./04_Models:/app/04_Models
+      - ./06_MLOps:/app/06_MLOps
+    environment:
+      - API_URL=http://churn-api:8000
+    depends_on:
+      - churn-api
+    restart: unless-stopped
+
+  # ── MLflow UI ─────────────────────────────────────────────────────────────
+  mlflow-ui:
+    build:
+      context: .
+      dockerfile: 06_MLOps/Dockerfile.mlflow
+    container_name: churn-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./06_MLOps:/project/06_MLOps
+    restart: unless-stopped
+
+  # ── PostgreSQL (Airflow) ───────────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    container_name: churn-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  # ── Airflow Init ──────────────────────────────────────────────────────────
+  airflow-init:
+    <<: *airflow-common
+    container_name: churn-airflow-init
+    command: >
+      bash -c "
+        airflow db migrate &&
+        (airflow users create
+          --username admin --firstname Admin --lastname User
+          --role Admin --email admin@churn-mlops.local --password admin
+        || echo 'User already exists')
+      "
+    restart: on-failure
+
+  # ── Airflow Webserver ─────────────────────────────────────────────────────
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: churn-airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    restart: always
+
+  # ── Airflow Scheduler ─────────────────────────────────────────────────────
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: churn-airflow-scheduler
+    command: scheduler
+    restart: always
+
+volumes:
+  postgres-db-volume:

@@ -1,4 +1,4 @@
 FROM apache/airflow:2.10.4
 USER airflow
-COPY requirements.airflow.txt /tmp/requirements.airflow.txt
+COPY 06_MLOps/airflow/requirements.airflow.txt /tmp/requirements.airflow.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.airflow.txt

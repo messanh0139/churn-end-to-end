@@ -9,7 +9,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  MLFLOW_ALLOW_FILE_STORE: "true"
+  MLFLOW_TRACKING_URI: sqlite:///06_MLOps/mlruns.db
 
 jobs:
   # ── 1. Tests ───────────────────────────────────────────────────────────────

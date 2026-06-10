@@ -14,6 +14,7 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-churn-secret-key}
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+    MLFLOW_TRACKING_URI: sqlite:////opt/airflow/project/06_MLOps/mlruns.db
     PYTHONPATH: /opt/airflow/project/03_SRC:/opt/airflow/project/07_Monitoring
     SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
     ALERT_EMAIL_SENDER: ${ALERT_EMAIL_SENDER:-}
@@ -53,13 +54,14 @@ services:
     command: >
       bash -c "
         airflow db migrate &&
-        airflow users create
+        (airflow users create
           --username admin
           --firstname Admin
           --lastname User
           --role Admin
           --email admin@churn-mlops.local
           --password admin
+        || echo 'User already exists')
       "
     restart: on-failure
 
