@@ -17,7 +17,7 @@ sys.path.append(str(ROOT / "03_SRC"))
 from data.clean_data import clean_dataframe
 from features.build_features import build_features
 from features.select_features import remove_useless_columns, get_feature_types
-from utils.config import DATA_RAW_PATH, BEST_MODEL_PATH, METADATA_PATH, TARGET_COLUMN, ID_COLUMN, RANDOM_STATE, TEST_SIZE
+from utils.config import DATA_RAW_PATH, DATA_PROCESSED_PATH, DATA_REFERENCE_PATH, BEST_MODEL_PATH, METADATA_PATH, TARGET_COLUMN, ID_COLUMN, RANDOM_STATE, TEST_SIZE
 from utils.mlflow_tracker import setup, start_run, log_sklearn_model, log_params, log_metrics, log_dataset
 
 import mlflow
@@ -88,6 +88,9 @@ def optimize():
 
         BEST_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(best_model, BEST_MODEL_PATH)
+
+        import shutil
+        shutil.copy2(DATA_PROCESSED_PATH, DATA_REFERENCE_PATH)
 
         metadata = {
             "optimized_model": "svc",

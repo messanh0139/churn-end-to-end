@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT / "03_SRC"))
 
 from utils.logger import get_logger
-from utils.config import DATA_PROCESSED_PATH
+from utils.config import DATA_PROCESSED_PATH, DATA_REFERENCE_PATH
 
 logger = get_logger(__name__)
 
@@ -85,5 +85,6 @@ def run_drift_detection(reference_path: Path, current_path: Path, threshold: flo
 
 
 if __name__ == "__main__":
-    report = run_drift_detection(DATA_PROCESSED_PATH, DATA_PROCESSED_PATH)
+    reference = DATA_REFERENCE_PATH if DATA_REFERENCE_PATH.exists() else DATA_PROCESSED_PATH
+    report = run_drift_detection(reference, DATA_PROCESSED_PATH)
     print(json.dumps(report, indent=2, ensure_ascii=False))
