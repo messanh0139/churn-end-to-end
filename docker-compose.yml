@@ -5,6 +5,7 @@ x-airflow-common:
   build:
     context: .
     dockerfile: 06_MLOps/airflow/Dockerfile.airflow
+  user: "${AIRFLOW_UID:-1000}:0"
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
