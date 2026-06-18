@@ -33,9 +33,7 @@ default_args = {
 }
 
 
-# ---------------------------------------------------------------------------
 # DAG 1 — Monitoring quotidien
-# ---------------------------------------------------------------------------
 with DAG(
     dag_id="churn_daily_monitoring",
     description="Rapport de performance + métriques réelles du modèle de churn",
@@ -63,9 +61,7 @@ with DAG(
     generate_performance_report >> compute_real_metrics
 
 
-# ---------------------------------------------------------------------------
-# DAG 2 — Ingestion → Drift → Réentraînement conditionnel (hebdomadaire)
-# ---------------------------------------------------------------------------
+# DAG 2 — Ingestion, drift detection et réentraînement conditionnel (hebdomadaire)
 def _ingest_new_data(**context) -> bool:
     """Ingère les nouvelles données depuis 01_Data/incoming/data_new.csv.
     Retourne True si des données ont été ingérées (pipeline continue),

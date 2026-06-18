@@ -21,7 +21,6 @@ st.title("Customer Churn Prediction — Dashboard Métier")
 tab1, tab2, tab3 = st.tabs(["Prédiction client", "Monitoring", "Comparaison des modèles"])
 
 
-# ── Tab 1 — Prédiction ────────────────────────────────────────────────────────
 with tab1:
     st.header("Prédire le risque de churn d'un client")
 
@@ -114,7 +113,6 @@ with tab1:
             st.error(f"Erreur API : {e}. Vérifiez que l'API tourne sur {API_URL}")
 
 
-# ── Tab 2 — Monitoring ────────────────────────────────────────────────────────
 with tab2:
     st.header("Surveillance du modèle en production")
 
@@ -190,7 +188,6 @@ with tab2:
             st.info("Envoyez des feedbacks via /feedback pour calculer les métriques réelles.")
 
 
-# ── Tab 3 — Comparaison des modèles ──────────────────────────────────────────
 with tab3:
     st.header("Comparaison des modèles entraînés")
 
