@@ -151,7 +151,22 @@ with DAG(
         python_callable=_send_drift_alert,
     )
 
-    drift_ok = EmptyOperator(task_id="drift_ok")
+    def _log_no_drift(**context):
+        import logging
+        reports = sorted(DRIFT_REPORTS_DIR.glob("drift_report_*.json"))
+        if reports:
+            report = json.loads(reports[-1].read_text(encoding="utf-8"))
+            drifted = report.get("features_with_drift", 0)
+            total = report.get("total_features", 0)
+            logging.getLogger("drift_ok").info(
+                "Aucun réentraînement nécessaire — drift %d/%d variables (seuil 30%%)",
+                drifted, total,
+            )
+
+    drift_ok = PythonOperator(
+        task_id="drift_ok",
+        python_callable=_log_no_drift,
+    )
 
     fetch_new_data >> detect_data_drift >> decide_retrain >> [retrain_model, drift_ok]
     retrain_model >> send_alert
