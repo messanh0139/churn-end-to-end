@@ -54,18 +54,24 @@ def optimize():
         X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
     )
 
-    model = SVC(class_weight="balanced", probability=True, random_state=RANDOM_STATE)
+    # Subsample train set for faster search (2000 samples ≈ same quality for SVC demo)
+    if len(X_train) > 2000:
+        X_train = X_train.sample(2000, random_state=RANDOM_STATE)
+        y_train = y_train.loc[X_train.index]
+
+    model = SVC(class_weight="balanced", probability=True,
+                random_state=RANDOM_STATE, max_iter=1000)
     param_distributions = {
-        "model__C": [0.01, 0.1, 1, 10, 100],
-        "model__gamma": ["scale", "auto", 0.001, 0.01, 0.1, 1],
-        "model__kernel": ["rbf", "poly", "sigmoid"],
+        "model__C": [0.1, 1, 10],
+        "model__gamma": ["scale", "auto"],
+        "model__kernel": ["rbf", "sigmoid"],
     }
 
     pipeline = Pipeline([("preprocessor", preprocessor), ("model", model)])
 
     search = RandomizedSearchCV(
         pipeline, param_distributions=param_distributions,
-        n_iter=5, scoring="f1", cv=3,
+        n_iter=3, scoring="f1", cv=2,
         random_state=RANDOM_STATE, n_jobs=-1, verbose=1,
     )
 
@@ -76,7 +82,7 @@ def optimize():
         best_model = search.best_estimator_
         metrics = get_metrics(best_model, X_test, y_test)
 
-        log_params({**search.best_params_, "n_iter": 5, "cv": 3, "scoring": "f1"})
+        log_params({**search.best_params_, "n_iter": 3, "cv": 2, "scoring": "f1"})
         mlflow.log_metric("best_cv_f1", round(search.best_score_, 4))
         log_metrics(metrics)
         log_sklearn_model(best_model)
