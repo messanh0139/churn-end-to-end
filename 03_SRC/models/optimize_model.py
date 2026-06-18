@@ -14,10 +14,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT / "03_SRC"))
 
-from data.clean_data import clean_dataframe
-from features.build_features import build_features
-from features.select_features import remove_useless_columns, get_feature_types
-from utils.config import DATA_RAW_PATH, DATA_PROCESSED_PATH, DATA_REFERENCE_PATH, BEST_MODEL_PATH, METADATA_PATH, TARGET_COLUMN, ID_COLUMN, RANDOM_STATE, TEST_SIZE
+from features.select_features import get_feature_types
+from utils.config import DATA_PROCESSED_PATH, DATA_REFERENCE_PATH, BEST_MODEL_PATH, METADATA_PATH, TARGET_COLUMN, RANDOM_STATE, TEST_SIZE
 from utils.mlflow_tracker import setup, start_run, log_sklearn_model, log_params, log_metrics, log_dataset
 
 import mlflow
@@ -40,10 +38,7 @@ def get_metrics(model, X_test, y_test):
 def optimize():
     setup(MLFLOW_EXPERIMENT)
 
-    df = pd.read_csv(DATA_RAW_PATH)
-    df = clean_dataframe(df)
-    df = build_features(df)
-    df = remove_useless_columns(df, [ID_COLUMN])
+    df = pd.read_csv(DATA_PROCESSED_PATH)
 
     X = df.drop(columns=[TARGET_COLUMN])
     y = df[TARGET_COLUMN]
@@ -75,13 +70,13 @@ def optimize():
     )
 
     with start_run(run_name="svc_randomizedsearch"):
-        log_dataset(df, DATA_RAW_PATH, TARGET_COLUMN)
+        log_dataset(df, DATA_PROCESSED_PATH, TARGET_COLUMN)
         search.fit(X_train, y_train)
 
         best_model = search.best_estimator_
         metrics = get_metrics(best_model, X_test, y_test)
 
-        log_params({**search.best_params_, "n_iter": 20, "cv": 5, "scoring": "f1"})
+        log_params({**search.best_params_, "n_iter": 5, "cv": 3, "scoring": "f1"})
         mlflow.log_metric("best_cv_f1", round(search.best_score_, 4))
         log_metrics(metrics)
         log_sklearn_model(best_model)

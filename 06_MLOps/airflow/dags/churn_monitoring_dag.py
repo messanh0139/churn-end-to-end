@@ -48,18 +48,14 @@ with DAG(
 
     generate_performance_report = BashOperator(
         task_id="generate_performance_report",
-        bash_command=(
-            f"python {MONITORING}/monitor_performance.py"
-        ),
+        bash_command=f"python {MONITORING}/monitor_performance.py || true",
         env=PYTHON_ENV,
         append_env=True,
     )
 
     compute_real_metrics = BashOperator(
         task_id="compute_real_metrics",
-        bash_command=(
-            f"python {MONITORING}/label_tracker.py"
-        ),
+        bash_command=f"python {MONITORING}/label_tracker.py || true",
         env=PYTHON_ENV,
         append_env=True,
     )
@@ -97,16 +93,26 @@ def _decide_retrain(**context):
 
 
 def _send_drift_alert(**context):
-    """Envoie une alerte Slack + email avec le rapport de drift."""
-    sys.path.insert(0, str(PROJECT / "07_Monitoring"))
-    sys.path.insert(0, str(PROJECT / "03_SRC"))
-    from alerts import send_drift_alert  # noqa: PLC0415
+    """Log le rapport de drift (Slack/email optionnels — ne bloque jamais le pipeline)."""
+    try:
+        sys.path.insert(0, str(PROJECT / "07_Monitoring"))
+        sys.path.insert(0, str(PROJECT / "03_SRC"))
+        from alerts import send_drift_alert  # noqa: PLC0415
+        from utils.logger import get_logger  # noqa: PLC0415
+        log = get_logger("send_drift_alert")
 
-    ti = context["ti"]
-    report_path = ti.xcom_pull(task_ids="decide_retrain", key="drift_report_path")
-    if report_path:
+        ti = context["ti"]
+        report_path = ti.xcom_pull(task_ids="decide_retrain", key="drift_report_path")
+        if not report_path:
+            return
         report = json.loads(Path(report_path).read_text(encoding="utf-8"))
         send_drift_alert(report)
+        log.info("Alerte drift traitée")
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("send_drift_alert").warning(
+            "send_drift_alert non critique — ignoré : %s", exc
+        )
 
 
 with DAG(
