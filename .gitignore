@@ -30,3 +30,6 @@ __pycache__/
 06_MLOps/airflow/.env.airflow
 06_MLOps/mlruns/
 06_MLOps/mlruns.db
+
+# MLflow (racine)
+mlruns/

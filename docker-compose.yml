@@ -99,14 +99,7 @@ services:
   airflow-init:
     <<: *airflow-common
     container_name: churn-airflow-init
-    command: >
-      bash -c "
-        airflow db migrate &&
-        (airflow users create
-          --username admin --firstname Admin --lastname User
-          --role Admin --email admin@churn-mlops.local --password admin
-        || echo 'User already exists')
-      "
+    command: bash -c "airflow db migrate && (airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@churn-mlops.local --password admin || echo 'User already exists')"
     restart: on-failure
 
   # ── Airflow Webserver ─────────────────────────────────────────────────────
