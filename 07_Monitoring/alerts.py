@@ -64,7 +64,7 @@ def send_drift_alert(drift_report: dict):
     ]
 
     message = (
-        f"⚠️ *Drift détecté* — {ts}\n"
+        f"Drift détecté — {ts}\n"
         f"{n}/{total} variables ont dérivé :\n"
         + "\n".join(drifted_features)
     )
@@ -72,5 +72,5 @@ def send_drift_alert(drift_report: dict):
     send_slack_alert(message)
     send_email_alert(
         subject=f"[Churn API] Drift détecté — {n}/{total} variables",
-        body=message.replace("*", "").replace("⚠️ ", "")
+        body=message,
     )

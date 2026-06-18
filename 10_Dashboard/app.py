@@ -13,13 +13,12 @@ API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="Customer Churn Dashboard",
-    page_icon="📊",
     layout="wide",
 )
 
-st.title("📊 Customer Churn Prediction — Dashboard Métier")
+st.title("Customer Churn Prediction — Dashboard Métier")
 
-tab1, tab2, tab3 = st.tabs(["🔮 Prédiction client", "📈 Monitoring", "🧪 Comparaison des modèles"])
+tab1, tab2, tab3 = st.tabs(["Prédiction client", "Monitoring", "Comparaison des modèles"])
 
 
 # ── Tab 1 — Prédiction ────────────────────────────────────────────────────────
@@ -61,7 +60,7 @@ with tab1:
 
     st.divider()
 
-    if st.button("🔍 Lancer la prédiction", type="primary", use_container_width=True):
+    if st.button("Lancer la prédiction", type="primary", use_container_width=True):
         payload = {
             "gender": gender, "SeniorCitizen": senior, "Partner": partner,
             "Dependents": dependents, "tenure": tenure, "PhoneService": phone_service,
@@ -85,24 +84,24 @@ with tab1:
 
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Probabilité de churn", f"{prob * 100:.1f}%")
-            c2.metric("Prédiction", "Churn ⚠️" if result["churn_prediction"] else "Fidèle ✅")
+            c2.metric("Prédiction", "Churn" if result["churn_prediction"] else "Fidèle")
             c3.metric("Segment de risque", segment)
             c4.metric("Action recommandée", action)
 
             st.progress(prob, text=f"Score de risque : {prob * 100:.1f}%")
 
             if prob >= 0.80:
-                st.error(f"🔴 **Risque très élevé** — {action}")
+                st.error(f"Risque très élevé — {action}")
             elif prob >= 0.60:
-                st.warning(f"🟠 **Risque élevé** — {action}")
+                st.warning(f"Risque élevé — {action}")
             elif prob >= 0.30:
-                st.info(f"🟡 **Risque moyen** — {action}")
+                st.info(f"Risque moyen — {action}")
             else:
-                st.success(f"🟢 **Risque faible** — {action}")
+                st.success(f"Risque faible — {action}")
 
             st.caption(f"ID prédiction : `{prediction_id}`")
 
-            with st.expander("📝 Enregistrer le vrai résultat (feedback)"):
+            with st.expander("Enregistrer le vrai résultat (feedback)"):
                 actual = st.radio("Ce client a-t-il finalement churné ?", ["Oui", "Non"], horizontal=True)
                 if st.button("Enregistrer"):
                     fb = requests.post(f"{API_URL}/feedback", json={
@@ -112,7 +111,7 @@ with tab1:
                     st.success(f"Feedback enregistré — ID : `{prediction_id[:12]}...`")
 
         except Exception as e:
-            st.error(f"❌ Erreur API : {e}. Vérifiez que l'API tourne sur {API_URL}")
+            st.error(f"Erreur API : {e}. Vérifiez que l'API tourne sur {API_URL}")
 
 
 # ── Tab 2 — Monitoring ────────────────────────────────────────────────────────
@@ -164,7 +163,7 @@ with tab2:
             st.metric("Variables en drift", f"{n_drifted} / {total}", f"{ratio:.0f}%")
 
             if n_drifted > 0:
-                st.warning(f"⚠️ Drift détecté — réentraînement recommandé si ratio ≥ 30%")
+                st.warning("Drift détecté — réentraînement recommandé si ratio >= 30%")
                 drifted_rows = [
                     {"Variable": col, "Test": v["test"], "p-value": v["p_value"]}
                     for col, v in report["results"].items()
@@ -172,7 +171,7 @@ with tab2:
                 ]
                 st.dataframe(pd.DataFrame(drifted_rows), hide_index=True)
             else:
-                st.success("✅ Aucun drift détecté")
+                st.success("Aucun drift détecté")
         else:
             st.info("Aucun rapport de drift disponible.")
 
@@ -199,7 +198,7 @@ with tab3:
     if meta_path.exists():
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         best = meta.get("best_model", "svc")
-        st.success(f"✅ Modèle en production : **{best.upper()}**")
+        st.success(f"Modèle en production : {best.upper()}")
 
     comparison_path = MODELS_DIR / "model_comparison_results.csv"
     if comparison_path.exists():
