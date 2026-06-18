@@ -33,3 +33,6 @@ __pycache__/
 
 # MLflow (racine)
 mlruns/
+
+# Archives des données ingérées (générées automatiquement par le pipeline)
+01_Data/incoming/processed/
