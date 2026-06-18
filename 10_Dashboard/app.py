@@ -9,6 +9,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 MONITORING_DIR = ROOT / "07_Monitoring"
 MODELS_DIR = ROOT / "04_Models"
+# URL de l'API, peut être surchargée via variable d'environnement en production
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 st.set_page_config(
@@ -89,6 +90,7 @@ with tab1:
 
             st.progress(prob, text=f"Score de risque : {prob * 100:.1f}%")
 
+            # Seuils définis avec l'équipe métier pour catégoriser le niveau de risque
             if prob >= 0.80:
                 st.error(f"Risque très élevé — {action}")
             elif prob >= 0.60:
