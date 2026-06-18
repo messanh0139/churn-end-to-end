@@ -19,7 +19,7 @@ st.set_page_config(
 
 st.title("Customer Churn Prediction — Dashboard Métier")
 
-tab1, tab2, tab3 = st.tabs(["Prédiction client", "Monitoring", "Comparaison des modèles"])
+tab1, tab2, tab3, tab4 = st.tabs(["Prédiction client", "Monitoring", "Comparaison des modèles", "Ingestion données"])
 
 
 with tab1:
@@ -219,3 +219,42 @@ with tab3:
             st.bar_chart(df["roc_auc"].sort_values())
     else:
         st.info("Lancez train_model.py pour générer les résultats de comparaison.")
+
+
+with tab4:
+    st.header("Déposer de nouvelles données")
+    st.write(
+        "Déposez un fichier CSV client pour déclencher la détection de drift "
+        "et le réentraînement automatique du modèle via Airflow."
+    )
+
+    INCOMING_DIR = ROOT / "01_Data" / "incoming"
+    incoming_file = INCOMING_DIR / "data_new.csv"
+
+    uploaded = st.file_uploader("Fichier CSV (même format que les données d'entraînement)", type="csv")
+
+    if uploaded is not None:
+        try:
+            df_preview = pd.read_csv(uploaded)
+            st.write(f"{len(df_preview)} lignes, {len(df_preview.columns)} colonnes")
+            st.dataframe(df_preview.head(3), hide_index=True)
+
+            if st.button("Valider et déposer dans le pipeline", type="primary"):
+                INCOMING_DIR.mkdir(parents=True, exist_ok=True)
+                uploaded.seek(0)
+                incoming_file.write_bytes(uploaded.read())
+                st.success(
+                    f"Fichier déposé dans incoming/. "
+                    "Airflow le traitera au prochain run (lundi 8h) ou via un trigger manuel."
+                )
+        except Exception as e:
+            st.error(f"Erreur lors de la lecture du fichier : {e}")
+
+    st.divider()
+    st.subheader("Statut du dossier incoming")
+
+    if incoming_file.exists():
+        size_kb = incoming_file.stat().st_size // 1024
+        st.warning(f"Un fichier est en attente de traitement : data_new.csv ({size_kb} Ko)")
+    else:
+        st.info("Aucun fichier en attente — le pipeline est libre.")
