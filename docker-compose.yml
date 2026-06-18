@@ -61,9 +61,11 @@ services:
     ports:
       - "8501:8501"
     volumes:
+      - ./10_Dashboard:/app/10_Dashboard
       - ./07_Monitoring:/app/07_Monitoring
       - ./04_Models:/app/04_Models
       - ./06_MLOps:/app/06_MLOps
+      - ./01_Data:/app/01_Data
     environment:
       - API_URL=http://churn-api:8000
     depends_on:

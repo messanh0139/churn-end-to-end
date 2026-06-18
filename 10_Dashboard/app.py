@@ -251,10 +251,34 @@ with tab4:
             st.error(f"Erreur lors de la lecture du fichier : {e}")
 
     st.divider()
-    st.subheader("Statut du dossier incoming")
+    st.subheader("Statut du pipeline")
 
     if incoming_file.exists():
         size_kb = incoming_file.stat().st_size // 1024
-        st.warning(f"Un fichier est en attente de traitement : data_new.csv ({size_kb} Ko)")
+        st.warning(f"Fichier en attente de traitement : data_new.csv ({size_kb} Ko) — déclenchez le DAG dans Airflow.")
     else:
-        st.info("Aucun fichier en attente — le pipeline est libre.")
+        st.success("Aucun fichier en attente — pipeline disponible.")
+
+    # Résultat du dernier traitement
+    drift_dir = MONITORING_DIR / "drift_reports"
+    reports = sorted(drift_dir.glob("drift_report_*.json")) if drift_dir.exists() else []
+    if reports:
+        last = json.loads(reports[-1].read_text(encoding="utf-8"))
+        n = last["features_with_drift"]
+        total = last["total_features"]
+        ts = last["timestamp"][:19].replace("T", " ")
+        ratio = round(n / total * 100) if total > 0 else 0
+
+        st.subheader("Résultat du dernier pipeline")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Date du traitement", ts)
+        c2.metric("Variables en drift", f"{n} / {total}")
+        c3.metric("Taux de drift", f"{ratio}%")
+
+        if ratio >= 30:
+            st.success(f"Drift détecté ({ratio}%) — modèle ré-entraîné automatiquement.")
+        else:
+            st.info(f"Drift faible ({ratio}%) — modèle inchangé.")
+
+    if st.button("Rafraîchir le statut"):
+        st.rerun()
