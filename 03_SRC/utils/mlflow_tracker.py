@@ -17,8 +17,29 @@ def get_tracking_uri() -> str:
     return os.environ.get("MLFLOW_TRACKING_URI", DEFAULT_TRACKING_URI)
 
 
+def _get_artifact_root() -> str:
+    """Artifact root = répertoire de mlruns.db + /mlruns (valide en local ET dans Docker)."""
+    tracking_uri = get_tracking_uri()
+    if tracking_uri.startswith("sqlite:///"):
+        db_path = Path(tracking_uri.replace("sqlite:///", ""))
+        return str(db_path.parent / "mlruns")
+    return str(ROOT / "06_MLOps" / "mlruns")
+
+
 def setup(experiment_name: str):
-    mlflow.set_tracking_uri(get_tracking_uri())
+    tracking_uri = get_tracking_uri()
+    mlflow.set_tracking_uri(tracking_uri)
+
+    artifact_root = _get_artifact_root()
+    Path(artifact_root).mkdir(parents=True, exist_ok=True)
+
+    client = mlflow.tracking.MlflowClient()
+    experiment = client.get_experiment_by_name(experiment_name)
+    if experiment is None:
+        client.create_experiment(experiment_name, artifact_location=artifact_root)
+    elif not Path(experiment.artifact_location.replace("file://", "")).exists():
+        client.update_experiment(experiment.experiment_id, artifact_location=artifact_root)
+
     mlflow.set_experiment(experiment_name)
 
 
