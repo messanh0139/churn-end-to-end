@@ -1,8 +1,8 @@
 """
 DAGs de monitoring MLOps pour le modèle de prédiction de churn.
 
-- churn_daily_monitoring : rapport de performance + métriques réelles (chaque jour à 8h)
-- churn_weekly_drift_check : détection de drift + réentraînement si nécessaire (chaque lundi à 8h)
+- churn_daily_monitoring   : rapport de performance + métriques réelles (chaque jour à 8h)
+- churn_weekly_drift_check : ingestion → drift detection → réentraînement conditionnel (chaque lundi à 8h)
 """
 
 import json
@@ -13,7 +13,7 @@ from pathlib import Path
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import BranchPythonOperator, PythonOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator, ShortCircuitOperator
 
 PROJECT = Path("/opt/airflow/project")
 MONITORING = PROJECT / "07_Monitoring"
@@ -68,8 +68,18 @@ with DAG(
 
 
 # ---------------------------------------------------------------------------
-# DAG 2 — Détection de drift hebdomadaire + réentraînement conditionnel
+# DAG 2 — Ingestion → Drift → Réentraînement conditionnel (hebdomadaire)
 # ---------------------------------------------------------------------------
+def _ingest_new_data(**context) -> bool:
+    """Ingère les nouvelles données depuis 01_Data/incoming/data_new.csv.
+    Retourne True si des données ont été ingérées (pipeline continue),
+    False sinon (ShortCircuitOperator arrête le pipeline proprement).
+    """
+    sys.path.insert(0, str(PROJECT / "03_SRC"))
+    from data.ingest_data import run as ingest_run  # noqa: PLC0415
+    return ingest_run()
+
+
 def _decide_retrain(**context):
     """Lit le dernier rapport de drift et décide si on réentraîne."""
     reports = sorted(DRIFT_REPORTS_DIR.glob("drift_report_*.json"))
@@ -109,11 +119,15 @@ with DAG(
     tags=["churn", "drift", "retraining", "weekly"],
 ) as weekly_dag:
 
+    fetch_new_data = ShortCircuitOperator(
+        task_id="fetch_new_data",
+        python_callable=_ingest_new_data,
+        ignore_downstream_trigger_rules=True,
+    )
+
     detect_data_drift = BashOperator(
         task_id="detect_data_drift",
-        bash_command=(
-            f"python {MONITORING}/data_drift_detection.py"
-        ),
+        bash_command=f"python {MONITORING}/data_drift_detection.py",
         env=PYTHON_ENV,
         append_env=True,
     )
@@ -125,9 +139,7 @@ with DAG(
 
     retrain_model = BashOperator(
         task_id="retrain_model",
-        bash_command=(
-            f"python {PROJECT}/03_SRC/models/optimize_model.py"
-        ),
+        bash_command=f"python {PROJECT}/03_SRC/models/optimize_model.py",
         env=PYTHON_ENV,
         append_env=True,
     )
@@ -139,5 +151,5 @@ with DAG(
 
     drift_ok = EmptyOperator(task_id="drift_ok")
 
-    detect_data_drift >> decide_retrain >> [retrain_model, drift_ok]
+    fetch_new_data >> detect_data_drift >> decide_retrain >> [retrain_model, drift_ok]
     retrain_model >> send_alert

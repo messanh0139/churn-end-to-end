@@ -26,7 +26,7 @@ x-airflow-common:
     - ./03_SRC:/opt/airflow/project/03_SRC:ro
     - ./04_Models:/opt/airflow/project/04_Models
     - ./07_Monitoring:/opt/airflow/project/07_Monitoring
-    - ./01_Data:/opt/airflow/project/01_Data:ro
+    - ./01_Data:/opt/airflow/project/01_Data
     - ./06_MLOps:/opt/airflow/project/06_MLOps
   depends_on:
     postgres:
