@@ -15,6 +15,9 @@ x-airflow-common:
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-churn-secret-key}
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
     MLFLOW_TRACKING_URI: sqlite:////opt/airflow/project/06_MLOps/mlruns.db
+    MLFLOW_DEFAULT_ARTIFACT_ROOT: /opt/airflow/project/06_MLOps/mlruns
+    HOME: /opt/airflow
+    GIT_PYTHON_REFRESH: quiet
     PYTHONPATH: /opt/airflow/project/03_SRC:/opt/airflow/project/07_Monitoring
     SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
     ALERT_EMAIL_SENDER: ${ALERT_EMAIL_SENDER:-}
