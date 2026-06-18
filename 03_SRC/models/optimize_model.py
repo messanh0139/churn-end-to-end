@@ -70,7 +70,7 @@ def optimize():
 
     search = RandomizedSearchCV(
         pipeline, param_distributions=param_distributions,
-        n_iter=20, scoring="f1", cv=5,
+        n_iter=5, scoring="f1", cv=3,
         random_state=RANDOM_STATE, n_jobs=-1, verbose=1,
     )
 
