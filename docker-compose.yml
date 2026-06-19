@@ -69,6 +69,8 @@ services:
     environment:
       - API_URL=http://churn-api:8000
       - AIRFLOW_URL=http://churn-airflow-webserver:8080
+      - AIRFLOW_USER=admin
+      - AIRFLOW_PASSWORD=admin
     depends_on:
       - churn-api
     restart: unless-stopped
