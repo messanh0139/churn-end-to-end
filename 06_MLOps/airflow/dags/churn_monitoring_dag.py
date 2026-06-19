@@ -33,7 +33,7 @@ default_args = {
 }
 
 
-# DAG 1 — Monitoring quotidien
+# DAG 1 : Monitoring quotidien
 with DAG(
     dag_id="churn_daily_monitoring",
     description="Rapport de performance + métriques réelles du modèle de churn",
@@ -61,7 +61,7 @@ with DAG(
     generate_performance_report >> compute_real_metrics
 
 
-# DAG 2 — Ingestion, drift detection et réentraînement conditionnel (hebdomadaire)
+# DAG 2 : Ingestion, drift detection et réentraînement conditionnel (hebdomadaire)
 def _ingest_new_data(**context) -> bool:
     """Ingère les nouvelles données depuis 01_Data/incoming/data_new.csv.
     Retourne True si des données ont été ingérées (pipeline continue),
@@ -89,7 +89,7 @@ def _decide_retrain(**context):
 
 
 def _send_drift_alert(**context):
-    """Log le rapport de drift (Slack/email optionnels — ne bloque jamais le pipeline)."""
+    """Log le rapport de drift (Slack/email optionnels : ne bloque jamais le pipeline)."""
     try:
         sys.path.insert(0, str(PROJECT / "07_Monitoring"))
         sys.path.insert(0, str(PROJECT / "03_SRC"))
@@ -107,7 +107,7 @@ def _send_drift_alert(**context):
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger("send_drift_alert").warning(
-            "send_drift_alert non critique — ignoré : %s", exc
+            "send_drift_alert non critique : ignoré : %s", exc
         )
 
 
@@ -159,7 +159,7 @@ with DAG(
             drifted = report.get("features_with_drift", 0)
             total = report.get("total_features", 0)
             logging.getLogger("drift_ok").info(
-                "Aucun réentraînement nécessaire — drift %d/%d variables (seuil 30%%)",
+                "Aucun réentraînement nécessaire : drift %d/%d variables (seuil 30%%)",
                 drifted, total,
             )
 

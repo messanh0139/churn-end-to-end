@@ -66,7 +66,7 @@ def archive_incoming(path: Path) -> None:
 def run() -> bool:
     """Retourne True si de nouvelles données ont été ingérées, False sinon."""
     if not has_new_data():
-        logger.info("Aucune nouvelle donnée dans 01_Data/incoming/ — pipeline ignoré")
+        logger.info("Aucune nouvelle donnée dans 01_Data/incoming/ : pipeline ignoré")
         return False
 
     logger.info(f"Nouveau fichier détecté : {INCOMING_FILE.name}")

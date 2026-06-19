@@ -36,12 +36,12 @@ def run(current_path: Path = DATA_PROCESSED_PATH, force: bool = False):
     elif should_retrain(drift_report):
         n = drift_report["features_with_drift"]
         total = drift_report["total_features"]
-        logger.warning(f"Drift sur {n}/{total} variables — réentraînement lancé")
+        logger.warning(f"Drift sur {n}/{total} variables : réentraînement lancé")
         from alerts import send_drift_alert
         send_drift_alert(drift_report)
         optimize()
     else:
-        logger.info("Drift insuffisant — pas de réentraînement nécessaire")
+        logger.info("Drift insuffisant : pas de réentraînement nécessaire")
 
     return drift_report
 

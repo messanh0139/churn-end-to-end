@@ -17,7 +17,7 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("Customer Churn Prediction — Dashboard Métier")
+st.title("Customer Churn Prediction")
 
 tab1, tab2, tab3, tab4 = st.tabs(["Prédiction client", "Monitoring", "Comparaison des modèles", "Ingestion données"])
 
@@ -92,13 +92,13 @@ with tab1:
 
             # Seuils définis avec l'équipe métier pour catégoriser le niveau de risque
             if prob >= 0.80:
-                st.error(f"Risque très élevé — {action}")
+                st.error(f"Risque très élevé : {action}")
             elif prob >= 0.60:
-                st.warning(f"Risque élevé — {action}")
+                st.warning(f"Risque élevé : {action}")
             elif prob >= 0.30:
-                st.info(f"Risque moyen — {action}")
+                st.info(f"Risque moyen : {action}")
             else:
-                st.success(f"Risque faible — {action}")
+                st.success(f"Risque faible : {action}")
 
             st.caption(f"ID prédiction : `{prediction_id}`")
 
@@ -109,7 +109,7 @@ with tab1:
                         "prediction_id": prediction_id,
                         "actual_churn": 1 if actual == "Oui" else 0,
                     }, timeout=10)
-                    st.success(f"Feedback enregistré — ID : `{prediction_id[:12]}...`")
+                    st.success(f"Feedback enregistré : ID : `{prediction_id[:12]}...`")
 
         except Exception as e:
             st.error(f"Erreur API : {e}. Vérifiez que l'API tourne sur {API_URL}")
@@ -163,7 +163,7 @@ with tab2:
             st.metric("Variables en drift", f"{n_drifted} / {total}", f"{ratio:.0f}%")
 
             if n_drifted > 0:
-                st.warning("Drift détecté — réentraînement recommandé si ratio >= 30%")
+                st.warning("Drift détecté : réentraînement recommandé si ratio >= 30%")
                 drifted_rows = [
                     {"Variable": col, "Test": v["test"], "p-value": v["p_value"]}
                     for col, v in report["results"].items()
@@ -238,9 +238,9 @@ def _trigger_dag() -> tuple[bool, str]:
         )
         if resp.status_code in (200, 200):
             return True, "Pipeline déclenché automatiquement."
-        return False, f"Airflow a répondu {resp.status_code} — déclenchez manuellement dans l'interface Airflow."
+        return False, f"Airflow a répondu {resp.status_code} : déclenchez manuellement dans l'interface Airflow."
     except Exception as e:
-        return False, f"Airflow injoignable ({e}) — déclenchez manuellement dans l'interface Airflow."
+        return False, f"Airflow injoignable ({e}) : déclenchez manuellement dans l'interface Airflow."
 
 
 with tab4:
@@ -281,7 +281,7 @@ with tab4:
         size_kb = incoming_file.stat().st_size // 1024
         st.warning(f"Fichier en attente de traitement : data_new.csv ({size_kb} Ko).")
     else:
-        st.success("Aucun fichier en attente — pipeline disponible.")
+        st.success("Aucun fichier en attente : pipeline disponible.")
 
     # Résultat du dernier traitement (drift report)
     drift_dir = MONITORING_DIR / "drift_reports"
@@ -300,9 +300,9 @@ with tab4:
         c3.metric("Taux de drift", f"{ratio}%")
 
         if ratio >= 30:
-            st.success(f"Drift détecté ({ratio}%) — modèle ré-entraîné automatiquement.")
+            st.success(f"Drift détecté ({ratio}%) : modèle ré-entraîné automatiquement.")
         else:
-            st.info(f"Drift faible ({ratio}%) — modèle inchangé.")
+            st.info(f"Drift faible ({ratio}%) : modèle inchangé.")
 
     # Dernier run MLflow
     mlflow_db = ROOT / "06_MLOps" / "mlruns.db"

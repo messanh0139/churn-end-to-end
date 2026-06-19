@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 def send_slack_alert(message: str) -> bool:
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
     if not webhook_url:
-        logger.warning("SLACK_WEBHOOK_URL non configuré — alerte Slack ignorée")
+        logger.warning("SLACK_WEBHOOK_URL non configuré : alerte Slack ignorée")
         return False
     try:
         response = requests.post(webhook_url, json={"text": message}, timeout=10)
@@ -32,7 +32,7 @@ def send_email_alert(subject: str, body: str) -> bool:
     receiver = os.environ.get("ALERT_EMAIL_RECEIVER")
 
     if not all([sender, password, receiver]):
-        logger.warning("Credentials email non configurés — alerte email ignorée")
+        logger.warning("Credentials email non configurés : alerte email ignorée")
         return False
     try:
         msg = MIMEMultipart()
@@ -64,13 +64,13 @@ def send_drift_alert(drift_report: dict):
     ]
 
     message = (
-        f"Drift détecté — {ts}\n"
+        f"Drift détecté : {ts}\n"
         f"{n}/{total} variables ont dérivé :\n"
         + "\n".join(drifted_features)
     )
 
     send_slack_alert(message)
     send_email_alert(
-        subject=f"[Churn API] Drift détecté — {n}/{total} variables",
+        subject=f"[Churn API] Drift détecté : {n}/{total} variables",
         body=message,
     )
