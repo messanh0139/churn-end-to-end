@@ -68,6 +68,7 @@ services:
       - ./01_Data:/app/01_Data
     environment:
       - API_URL=http://churn-api:8000
+      - AIRFLOW_URL=http://churn-airflow-webserver:8080
     depends_on:
       - churn-api
     restart: unless-stopped

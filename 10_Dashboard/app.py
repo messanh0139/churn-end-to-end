@@ -221,6 +221,28 @@ with tab3:
         st.info("Lancez train_model.py pour générer les résultats de comparaison.")
 
 
+AIRFLOW_URL = os.environ.get("AIRFLOW_URL", "http://airflow-webserver:8080")
+AIRFLOW_USER = os.environ.get("AIRFLOW_USER", "airflow")
+AIRFLOW_PASSWORD = os.environ.get("AIRFLOW_PASSWORD", "airflow")
+DAG_ID = "churn_weekly_drift_check"
+
+
+def _trigger_dag() -> tuple[bool, str]:
+    """Déclenche le DAG Airflow via l'API REST. Retourne (succès, message)."""
+    try:
+        resp = requests.post(
+            f"{AIRFLOW_URL}/api/v1/dags/{DAG_ID}/dagRuns",
+            json={"conf": {}},
+            auth=(AIRFLOW_USER, AIRFLOW_PASSWORD),
+            timeout=10,
+        )
+        if resp.status_code in (200, 200):
+            return True, "Pipeline déclenché automatiquement."
+        return False, f"Airflow a répondu {resp.status_code} — déclenchez manuellement dans l'interface Airflow."
+    except Exception as e:
+        return False, f"Airflow injoignable ({e}) — déclenchez manuellement dans l'interface Airflow."
+
+
 with tab4:
     st.header("Déposer de nouvelles données")
     st.write(
@@ -243,10 +265,12 @@ with tab4:
                 INCOMING_DIR.mkdir(parents=True, exist_ok=True)
                 uploaded.seek(0)
                 incoming_file.write_bytes(uploaded.read())
-                st.success(
-                    f"Fichier déposé dans incoming/. "
-                    "Airflow le traitera au prochain run (lundi 8h) ou via un trigger manuel."
-                )
+
+                ok, msg = _trigger_dag()
+                if ok:
+                    st.success(f"Fichier déposé. {msg}")
+                else:
+                    st.warning(f"Fichier déposé. {msg}")
         except Exception as e:
             st.error(f"Erreur lors de la lecture du fichier : {e}")
 
@@ -255,11 +279,11 @@ with tab4:
 
     if incoming_file.exists():
         size_kb = incoming_file.stat().st_size // 1024
-        st.warning(f"Fichier en attente de traitement : data_new.csv ({size_kb} Ko) — déclenchez le DAG dans Airflow.")
+        st.warning(f"Fichier en attente de traitement : data_new.csv ({size_kb} Ko).")
     else:
         st.success("Aucun fichier en attente — pipeline disponible.")
 
-    # Résultat du dernier traitement
+    # Résultat du dernier traitement (drift report)
     drift_dir = MONITORING_DIR / "drift_reports"
     reports = sorted(drift_dir.glob("drift_report_*.json")) if drift_dir.exists() else []
     if reports:
@@ -279,6 +303,39 @@ with tab4:
             st.success(f"Drift détecté ({ratio}%) — modèle ré-entraîné automatiquement.")
         else:
             st.info(f"Drift faible ({ratio}%) — modèle inchangé.")
+
+    # Dernier run MLflow
+    mlflow_db = ROOT / "06_MLOps" / "mlruns.db"
+    if mlflow_db.exists():
+        try:
+            import sqlite3
+            con = sqlite3.connect(str(mlflow_db))
+            row = con.execute(
+                """
+                SELECT r.run_uuid, r.start_time, r.status,
+                       MAX(CASE WHEN m.key='f1_score'  THEN m.value END) AS f1,
+                       MAX(CASE WHEN m.key='roc_auc'   THEN m.value END) AS auc,
+                       MAX(CASE WHEN m.key='accuracy'  THEN m.value END) AS acc
+                FROM runs r
+                LEFT JOIN metrics m ON m.run_uuid = r.run_uuid
+                WHERE r.status = 'FINISHED'
+                GROUP BY r.run_uuid
+                ORDER BY r.start_time DESC
+                LIMIT 1
+                """
+            ).fetchone()
+            con.close()
+            if row:
+                import datetime
+                run_ts = datetime.datetime.fromtimestamp(row[1] / 1000).strftime("%Y-%m-%d %H:%M:%S")
+                st.subheader("Dernier run MLflow")
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Date", run_ts)
+                m2.metric("F1-Score", f"{row[3]:.4f}" if row[3] else "—")
+                m3.metric("ROC-AUC", f"{row[4]:.4f}" if row[4] else "—")
+                m4.metric("Accuracy", f"{row[5]:.4f}" if row[5] else "—")
+        except Exception:
+            pass
 
     if st.button("Rafraîchir le statut"):
         st.rerun()
