@@ -5,13 +5,13 @@
     "model__gamma": "scale",
     "model__C": 0.1
   },
-  "best_cv_f1": 0.5672,
+  "best_cv_f1": 0.5619,
   "test_metrics": {
     "accuracy": 0.2654,
     "precision": 0.2654,
     "recall": 1.0,
     "f1_score": 0.4195,
-    "roc_auc": 0.7449
+    "roc_auc": 0.7688
   },
   "model_path": "/opt/airflow/project/04_Models/best_model.pkl"
 }
